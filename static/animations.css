@@ -1,0 +1,52 @@
+/* Lightweight shared motion system: compositor-only transforms and opacity. */
+:root{--motion-fast:160ms;--motion-normal:260ms;--motion-slow:380ms;--motion-enter:cubic-bezier(.16,1,.3,1);--motion-standard:cubic-bezier(.2,.75,.25,1)}
+button{transition:transform var(--motion-fast) var(--motion-enter),opacity var(--motion-fast) ease,filter var(--motion-fast) ease,background-color var(--motion-normal) ease,border-color var(--motion-normal) ease,box-shadow var(--motion-normal) ease;touch-action:manipulation}
+button:active:not(:disabled){filter:brightness(.96);transform:scale(.975)}
+.nav-btn:active:not(:disabled),.add-balance:active:not(:disabled){transform:scale(.96)}
+.nav-btn:active:not(:disabled){transform:scale(.94)}
+.stagger-item{opacity:0;animation:card-in 280ms cubic-bezier(.2,.75,.25,1) forwards;animation-delay:var(--stagger,0ms);will-change:transform,opacity}
+.order-card{animation:order-in var(--motion-normal) var(--motion-enter) both;animation-delay:var(--stagger,0ms)}
+.payment-method{transition:transform var(--motion-fast) var(--motion-enter),background-color var(--motion-normal) ease,border-color var(--motion-normal) ease}
+.search{display:flex;align-items:center;gap:9px;margin:-9px 0 16px;padding:0 14px;border:1px solid var(--line);border-radius:16px;background:#0e1119;color:var(--muted)}
+.search input{width:100%;padding:14px 0;border:0;outline:0;background:transparent;color:var(--text)}
+@keyframes card-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes order-in{from{opacity:0;transform:translate3d(0,6px,0)}to{opacity:1;transform:translate3d(0,0,0)}}
+.page.page-enter-right{animation:page-enter-right 300ms cubic-bezier(.16,1,.3,1)}.page.page-enter-left{animation:page-enter-left 300ms cubic-bezier(.16,1,.3,1)}
+#app{transition:opacity 150ms ease,transform 150ms cubic-bezier(.16,1,.3,1)}#app.page-exit-right{opacity:0;transform:translate3d(-5px,0,0)}#app.page-exit-left{opacity:0;transform:translate3d(5px,0,0)}
+@keyframes page-enter-right{from{opacity:0;transform:translate3d(5px,0,0)}}@keyframes page-enter-left{from{opacity:0;transform:translate3d(-5px,0,0)}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-delay:0ms!important;transition-duration:.01ms!important}.page,.page.game-detail,.page.checkout-page,.order-card,.package,.checkout-page>*{animation:reduced-fade 80ms linear both!important}#app{transition:opacity 80ms linear!important}#app.page-exit-left,#app.page-exit-right{transform:none!important}.nav-btn.active .nav-icon,button:active:not(:disabled){transform:none!important}}
+@keyframes reduced-fade{from{opacity:0}to{opacity:1}}
+
+/* Detail and checkout choreography. */
+.page.game-detail,.page.checkout-page{animation:detail-in var(--motion-normal) var(--motion-enter) both}
+@keyframes detail-in{from{opacity:0;transform:translate3d(0,8px,0)}to{opacity:1;transform:translate3d(0,0,0)}}
+.game-detail .detail-visual>.game-cover{animation:banner-in var(--motion-slow) var(--motion-enter) both}
+@keyframes banner-in{from{opacity:0;transform:scale(.985)}to{opacity:1;transform:scale(1)}}
+.game-detail .detail-visual>.app-icon,.game-detail .game-identity>.app-icon{animation:icon-in var(--motion-slow) var(--motion-enter) 45ms both}
+@keyframes icon-in{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+.game-detail .sub-header>div,.game-detail .currency-card,.game-detail .section-heading,.game-detail .game-identity>div,.game-detail .game-description,.game-detail .package-heading{animation:copy-in var(--motion-normal) var(--motion-enter) 70ms both}
+@keyframes copy-in{from{opacity:0;transform:translate3d(0,5px,0)}to{opacity:1;transform:translate3d(0,0,0)}}
+.game-detail .package{animation:package-in var(--motion-normal) var(--motion-enter) both;animation-delay:calc(90ms + var(--stagger,0ms));transition:transform 220ms var(--motion-enter),border-color 240ms ease,background-color 240ms ease,box-shadow 240ms ease}
+@keyframes package-in{from{opacity:0;transform:translate3d(0,6px,0)}to{opacity:1;transform:translate3d(0,0,0)}}
+.game-detail .package.selection-pop{animation:package-select 240ms var(--motion-enter)}
+@keyframes package-select{0%,100%{transform:scale(1)}45%{transform:scale(.97)}}
+.package-check{display:grid!important;opacity:0;transform:scale(.7);transition:opacity 240ms ease,transform 240ms var(--motion-enter)}.package.selected .package-check{opacity:1;transform:scale(1)}
+.checkout-page>.sub-header{animation:checkout-item var(--motion-normal) var(--motion-enter) both}.checkout-page>.order-summary{animation:checkout-item var(--motion-normal) var(--motion-enter) 35ms both}.checkout-page>.form-section:nth-child(3){animation:checkout-item var(--motion-normal) var(--motion-enter) 70ms both}.checkout-page>.form-section:nth-child(4){animation:checkout-item var(--motion-normal) var(--motion-enter) 105ms both}.checkout-page>.total-row{animation:checkout-item var(--motion-normal) var(--motion-enter) 140ms both}.checkout-page>#payBtn,.checkout-page>.demo-note{animation:checkout-item var(--motion-normal) var(--motion-enter) 175ms both}
+@keyframes checkout-item{from{opacity:0;transform:translate3d(0,6px,0)}to{opacity:1;transform:translate3d(0,0,0)}}
+.form-section input{transition:border-color 200ms ease,box-shadow 200ms ease,background-color 200ms ease}.form-section input:focus{background:#111622}.form-section input.invalid{animation:input-error 220ms ease;box-shadow:0 0 0 3px rgba(239,95,115,.09)}
+@keyframes input-error{0%,100%{transform:translate3d(0,0,0)}45%{transform:translate3d(2px,0,0)}}
+.delayed-loader{min-height:220px}.status{transition:color var(--motion-normal) ease,background-color var(--motion-normal) ease,opacity var(--motion-normal) ease}
+.game-cover{aspect-ratio:16/10}.game-cover img,.game-cover .cover-image,.app-icon .icon-image{transition:opacity var(--motion-normal) ease}.cover-fallback{transition:opacity var(--motion-normal) ease}.game-cover.loaded .cover-fallback{display:flex;opacity:0;pointer-events:none}
+body{-webkit-overflow-scrolling:touch}
+
+/* Local game artwork and resilient placeholders. */
+.game-cover .cover-image{position:absolute;z-index:2;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .25s}
+.game-cover.loaded .cover-image{opacity:1}.game-cover.loaded .cover-fallback{display:none}
+.cover-shade{position:absolute;z-index:3;inset:42% 0 0;background:linear-gradient(transparent,rgba(4,5,9,.72));pointer-events:none}.game-cover:not(.loaded) .cover-shade{display:none}
+.app-icon{position:relative;display:grid;flex:0 0 42px;width:42px;height:42px;overflow:hidden;place-items:center;border:1px solid rgba(255,255,255,.2);border-radius:13px;background:linear-gradient(145deg,#302451,#171b29);box-shadow:0 7px 18px rgba(0,0,0,.38);color:#d8cdf8;font-size:10px;font-weight:900}
+.app-icon .icon-image{position:absolute;z-index:2;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .2s}.app-icon.loaded .icon-image{opacity:1}.app-icon.loaded .icon-fallback{display:none}.icon-fallback{position:relative;z-index:1}
+.game-card-info{gap:9px}.game-card-info>.app-icon{display:grid}.game-card-copy{display:flex;min-width:0;flex:1;flex-direction:column}.game-card-copy strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.catalog-list{display:flex;flex-direction:column;gap:9px}.catalog-row{display:flex;width:100%;align-items:center;gap:12px;padding:11px 12px;border:1px solid var(--line);border-radius:17px;background:linear-gradient(145deg,#141823,#10131b);text-align:left}.catalog-row>span:nth-child(2){display:flex;min-width:0;flex:1;flex-direction:column}.catalog-row strong{overflow:hidden;font-size:13px;text-overflow:ellipsis;white-space:nowrap}.catalog-row small{margin-top:3px;color:var(--muted);font-size:10px}.catalog-row>i{display:grid;flex:0 0 27px;height:27px;place-items:center;border-radius:9px;background:#1c2130;color:#9b83e8}.catalog-row svg{width:15px;fill:none;stroke:currentColor;stroke-width:2}
+.detail-visual{position:relative}.detail-page .detail-visual>.game-cover.large{height:218px;border:1px solid var(--line);border-radius:26px}.detail-visual>.app-icon{position:absolute;z-index:5;left:18px;bottom:-28px;width:70px;height:70px;border-width:2px;border-radius:20px;box-shadow:0 12px 28px rgba(0,0,0,.55);font-size:14px}.detail-page .currency-card{padding-left:103px;min-height:76px}
+@media(min-width:541px){.detail-page .detail-visual>.game-cover.large{height:270px}}
+@media(max-width:350px){.game-card-info{gap:6px}.game-card-info>.app-icon{width:36px;height:36px;flex-basis:36px}.game-card-info i{display:none}.detail-page .currency-card{padding-left:96px}}

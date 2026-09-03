@@ -1,0 +1,2 @@
+.ref-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:12px}.ref-stats span{display:flex;min-width:0;flex-direction:column;padding:9px;border:1px solid var(--line);border-radius:11px;color:var(--muted);font-size:8px}.ref-stats b{margin-top:4px;overflow:hidden;color:#fff;font-size:11px;text-overflow:ellipsis}.balance-card>div{grid-template-columns:1fr}.balance-card section+section{border:0}
+@media(max-width:350px){.ref-stats{grid-template-columns:1fr}}

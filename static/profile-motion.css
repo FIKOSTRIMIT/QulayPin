@@ -1,0 +1,2 @@
+.status{transition:opacity 200ms ease,transform 200ms ease}.status.status-updating{animation:status-update 200ms ease}@keyframes status-update{50%{opacity:.45;transform:scale(.96)}}
+@media(prefers-reduced-motion:reduce){.status,.status.status-updating{animation:none!important;transition:none!important}}
