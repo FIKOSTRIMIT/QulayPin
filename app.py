@@ -8,25 +8,26 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel,Field
 from dotenv import load_dotenv
 from database import apply_promo,audit,confirm_demo_payment,connect,create_order,create_topup,get_catalog,get_orders,get_settings,get_user_profile,init_db,referral_stats,seed_catalog,set_referrer,upsert_user
+from fulfillment import list_providers,process_paid_order
 
 BASE_DIR=Path(__file__).parent
 load_dotenv(BASE_DIR/".env")
 DEV_MODE=os.getenv("APP_ENV","development").lower()!="production"
 AUTH_MAX_AGE=int(os.getenv("TELEGRAM_INITDATA_MAX_AGE",os.getenv("TELEGRAM_AUTH_MAX_AGE","86400")))
-ORDER_STATUSES={"created","waiting_payment","paid","processing","completed","expired","failed","cancelled"}
+ORDER_STATUSES={"created","waiting_payment","paid","processing","completed","failed","manual_review","expired","cancelled"}
 ADMIN_SESSIONS={}; LOGIN_ATTEMPTS={}; ADMIN_SESSION_AGE=8*60*60
 REFERRAL_PERCENT=int(os.getenv("REFERRAL_PERCENT","1"))
 SEED_CATALOG=[
-{"id":"mlbb","name":"Mobile Legends: Bang Bang","short":"MLBB","icon":"/static/images/games/icons/mlbb.webp","card_image":"/static/images/games/cards/mlbb.webp","accent":"violet","description":"Diamonds","packages":[{"name":"86 Diamonds","amount":16000},{"name":"172 Diamonds","amount":31000},{"name":"257 Diamonds","amount":45000},{"name":"706 Diamonds","amount":118000}]},
-{"id":"pubg","name":"PUBG MOBILE","short":"PUBG","icon":"/static/images/games/icons/pubg.webp","card_image":"/static/images/games/cards/pubg.webp","accent":"orange","description":"UC","packages":[{"name":"60 UC","amount":15000},{"name":"325 UC","amount":69000},{"name":"660 UC","amount":135000},{"name":"1800 UC","amount":349000}]},
+{"id":"mlbb","name":"Mobile Legends: Bang Bang","short":"MLBB","icon":"/static/images/games/icons/mlbb.webp.webp","card_image":"/static/images/games/cards/mlbb.webp","accent":"violet","description":"Diamonds","packages":[{"name":"86 Diamonds","amount":16000},{"name":"172 Diamonds","amount":31000},{"name":"257 Diamonds","amount":45000},{"name":"706 Diamonds","amount":118000}]},
+{"id":"pubg","name":"PUBG MOBILE","short":"PUBG","icon":"/static/images/games/icons/pubg.webp","card_image":"/static/images/games/cards/pubg.webp.webp","accent":"orange","description":"UC","packages":[{"name":"60 UC","amount":15000},{"name":"325 UC","amount":69000},{"name":"660 UC","amount":135000},{"name":"1800 UC","amount":349000}]},
 {"id":"ff","name":"Free Fire","short":"FF","icon":"/static/images/games/icons/freefire.webp","card_image":"/static/images/games/cards/freefire.webp","accent":"red","description":"Diamonds","packages":[{"name":"100 Diamonds","amount":14000},{"name":"310 Diamonds","amount":41000},{"name":"520 Diamonds","amount":68000},{"name":"1060 Diamonds","amount":134000}]},
-{"id":"roblox","name":"Roblox","short":"R","icon":"/static/images/games/icons/roblox.webp","card_image":"/static/images/games/cards/roblox.webp","accent":"blue","description":"Robux","packages":[{"name":"400 Robux","amount":65000},{"name":"800 Robux","amount":125000}]},
-{"id":"codm","name":"Call of Duty: Mobile","short":"CODM","icon":"/static/images/games/icons/codm.webp","card_image":"/static/images/games/cards/codm.webp","accent":"orange","description":"CP","packages":[{"name":"80 CP","amount":15000},{"name":"420 CP","amount":69000}]},
-{"id":"honorofkings","name":"Honor of Kings","short":"HOK","icon":"/static/images/games/icons/honorofkings.webp","card_image":"/static/images/games/cards/honorofkings.webp","accent":"orange","description":"Tokens","packages":[{"name":"80 Tokens","amount":15000},{"name":"400 Tokens","amount":69000}]},
+{"id":"roblox","name":"Roblox","short":"R","icon":"/static/images/games/icons/Roblox.webp","card_image":"/static/images/games/cards/roblox.webp","accent":"blue","description":"Robux","packages":[{"name":"400 Robux","amount":65000},{"name":"800 Robux","amount":125000}]},
+{"id":"codm","name":"Call of Duty: Mobile","short":"CODM","icon":"/static/images/games/icons/codm.webp.webp","card_image":"/static/images/games/cards/codm.webp.webp","accent":"orange","description":"CP","packages":[{"name":"80 CP","amount":15000},{"name":"420 CP","amount":69000}]},
+{"id":"honorofkings","name":"Honor of Kings","short":"HOK","icon":"/static/images/games/icons/honorofkings.webp.webp","card_image":"/static/images/games/cards/honorofkings.webp.webp","accent":"orange","description":"Tokens","packages":[{"name":"80 Tokens","amount":15000},{"name":"400 Tokens","amount":69000}]},
 {"id":"genshin","name":"Genshin Impact","short":"GI","icon":"/static/images/games/icons/genshin.webp","card_image":"/static/images/games/cards/genshin.webp","accent":"blue","description":"Genesis Crystals","packages":[{"name":"60 Genesis Crystals","amount":15000},{"name":"330 Genesis Crystals","amount":69000}]},
-{"id":"honkai-star-rail","name":"Honkai: Star Rail","short":"HSR","icon":"/static/images/games/icons/honkai-star-rail.webp","card_image":"/static/images/games/cards/honkai-star-rail.webp","accent":"blue","description":"Oneiric Shards","packages":[{"name":"60 Oneiric Shards","amount":15000},{"name":"330 Oneiric Shards","amount":69000}]},
+{"id":"honkai-star-rail","name":"Honkai: Star Rail","short":"HSR","icon":"/static/images/games/icons/honkai-star-rail.webp.webp","card_image":"/static/images/games/cards/honkai-star-rail.webp.webp","accent":"blue","description":"Oneiric Shards","packages":[{"name":"60 Oneiric Shards","amount":15000},{"name":"330 Oneiric Shards","amount":69000}]},
 {"id":"brawlstars","name":"Brawl Stars","short":"BS","icon":"/static/images/games/icons/brawlstars.webp","card_image":"/static/images/games/cards/brawlstars.webp","accent":"red","description":"Gems","packages":[{"name":"30 Gems","amount":15000},{"name":"80 Gems","amount":35000}]},
-{"id":"stars","name":"Telegram","short":"TG","icon":"/static/images/games/icons/telegram.webp","card_image":"/static/images/games/cards/telegram.webp","accent":"blue","description":"Stars","packages":[{"name":"100 Stars","amount":27000},{"name":"250 Stars","amount":65000},{"name":"500 Stars","amount":125000},{"name":"1000 Stars","amount":245000}]}]
+{"id":"stars","name":"Telegram","short":"TG","icon":"/static/images/games/icons/telegramstars.webp","card_image":"/static/images/games/cards/tgstars.webp","accent":"blue","description":"Stars","packages":[{"name":"100 Stars","amount":27000},{"name":"250 Stars","amount":65000},{"name":"500 Stars","amount":125000},{"name":"1000 Stars","amount":245000}]}]
 
 def field(key,label,kind="text",placeholder="Введите идентификатор",helper="Укажите данные из профиля аккаунта"):
     return {"key":key,"label":label,"type":kind,"placeholder":placeholder,"helper":helper,"required":True,"min_length":2,"max_length":128}
@@ -39,16 +40,10 @@ FIELD_OVERRIDES={
 "honkai-star-rail":[field("uid","UID","numeric"),field("server","Server")],"brawlstars":[field("player_tag","Player Tag","username","#ABC123")],
 "stars":[field("telegram_username","Telegram username","username","@username","Без пароля и кодов подтверждения")]
 }
-ASSET_OVERRIDES={
-"mlbb":("/static/images/games/icons/mlbb.webp.webp","/static/images/games/cards/mlbb.webp"),"pubg":("/static/images/games/icons/pubg.webp","/static/images/games/cards/pubg.webp.webp"),
-"roblox":("/static/images/games/icons/Roblox.webp","/static/images/games/cards/roblox.webp"),"codm":("/static/images/games/icons/codm.webp.webp","/static/images/games/cards/codm.webp.webp"),
-"honorofkings":("/static/images/games/icons/honorofkings.webp.webp","/static/images/games/cards/honorofkings.webp.webp"),"honkai-star-rail":("/static/images/games/icons/honkai-star-rail.webp.webp","/static/images/games/cards/honkai-star-rail.webp.webp"),
-"stars":("/static/images/games/icons/telegramstars.webp","/static/images/games/cards/tgstars.webp")}
 for _game in SEED_CATALOG:
     _game["checkout_fields"]=FIELD_OVERRIDES.get(_game["id"],[field("player_id","Player ID")])
     _game["popular"]=_game["id"] in {"mlbb","pubg","ff","roblox","stars"}
     _game["category"]="telegram" if _game["id"]=="stars" else "games"
-    if _game["id"] in ASSET_OVERRIDES: _game["icon"],_game["card_image"]=ASSET_OVERRIDES[_game["id"]]
 
 def demo_game(id,name,short,icon,card,description,category="games",fields=None):
     return {"id":id,"name":name,"short":short,"icon":f"/static/images/games/icons/{icon}","card_image":f"/static/images/games/cards/{card}" if card else "","accent":"violet","description":description,"category":category,"popular":False,"checkout_fields":fields or [field("player_id","Player ID")],"packages":[{"name":"Demo Package 1","amount":0},{"name":"Demo Package 2","amount":0}]}
@@ -96,6 +91,11 @@ class AdminProductIn(BaseModel):
     game_id:str=Field(min_length=1,max_length=64); name:str=Field(min_length=1,max_length=120); sku:str|None=Field(default=None,max_length=80)
     amount:int=Field(ge=0,le=2_000_000_000); currency_label:str=Field(default="",max_length=40); provider_cost:int|None=Field(default=None,ge=0,le=2_000_000_000)
     is_active:bool=True; is_demo:bool=False; sort_order:int=Field(default=0,ge=-10000,le=10000)
+    fulfillment_mode:str=Field(default="manual",pattern=r"^(manual|auto)$"); provider:str|None=Field(default=None,pattern=r"^[a-z0-9_-]+$",max_length=64)
+    provider_product_id:str|None=Field(default=None,max_length=160); provider_price:int|None=Field(default=None,ge=0,le=2_000_000_000)
+    fulfillment_enabled:bool=False; min_quantity:int=Field(default=1,ge=1,le=1_000_000); max_quantity:int=Field(default=1,ge=1,le=1_000_000)
+class FulfillmentModeIn(BaseModel): fulfillment_mode:str=Field(pattern=r"^(manual|auto)$")
+class FulfillmentProviderIn(BaseModel): name:str=Field(min_length=1,max_length=120); enabled:bool
 class PromoAdminIn(BaseModel):
     code:str=Field(min_length=3,max_length=32,pattern=r"^[A-Za-z0-9_-]+$"); discount_type:str=Field(pattern=r"^(percent|fixed|balance)$")
     discount_value:int=Field(ge=0,le=100_000_000); minimum_order:int=Field(default=0,ge=0,le=2_000_000_000); usage_limit:int|None=Field(default=None,ge=1)
@@ -277,17 +277,46 @@ def admin_product_create(body:AdminProductIn):
     with connect() as c:
         if not c.execute("SELECT 1 FROM games WHERE id=?",(body.game_id,)).fetchone(): raise HTTPException(404,"Игра не найдена")
         if body.sku and c.execute("SELECT 1 FROM products WHERE sku=?",(body.sku,)).fetchone(): raise HTTPException(409,"SKU уже используется")
-        cur=c.execute("INSERT INTO products(game_id,name,sku,amount,currency_label,provider_cost,is_active,is_demo,sort_order) VALUES(?,?,?,?,?,?,?,?,?)",(body.game_id,body.name,body.sku,body.amount,body.currency_label,body.provider_cost,int(body.is_active),int(body.is_demo),body.sort_order)); audit(c,"product_created","product",cur.lastrowid,body.model_dump()); c.commit(); return {"ok":True,"id":cur.lastrowid}
+        if body.min_quantity>body.max_quantity: raise HTTPException(422,"min_quantity не может быть больше max_quantity")
+        if body.fulfillment_mode=="auto" and (not body.provider or not body.provider_product_id): raise HTTPException(422,"Для AUTO укажите provider и provider_product_id")
+        if body.provider and not c.execute("SELECT 1 FROM fulfillment_providers WHERE code=?",(body.provider,)).fetchone(): raise HTTPException(422,"Неизвестный provider")
+        cur=c.execute("""INSERT INTO products(game_id,name,sku,amount,currency_label,provider_cost,is_active,is_demo,sort_order,fulfillment_mode,provider,provider_product_id,provider_price,fulfillment_enabled,min_quantity,max_quantity)
+        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",(body.game_id,body.name,body.sku,body.amount,body.currency_label,body.provider_cost,int(body.is_active),int(body.is_demo),body.sort_order,body.fulfillment_mode,body.provider,body.provider_product_id,body.provider_price,int(body.fulfillment_enabled),body.min_quantity,body.max_quantity)); audit(c,"product_created","product",cur.lastrowid,body.model_dump()); c.commit(); return {"ok":True,"id":cur.lastrowid}
 @app.put("/api/admin/products/{product_id}",dependencies=[Depends(admin_session)])
 def admin_product_save(product_id:int,body:AdminProductIn):
     with connect() as c:
         if body.sku and c.execute("SELECT 1 FROM products WHERE sku=? AND id<>?",(body.sku,product_id)).fetchone(): raise HTTPException(409,"SKU уже используется")
-        r=c.execute("UPDATE products SET game_id=?,name=?,sku=?,amount=?,currency_label=?,provider_cost=?,is_active=?,is_demo=?,sort_order=? WHERE id=? AND archived_at IS NULL",(body.game_id,body.name,body.sku,body.amount,body.currency_label,body.provider_cost,int(body.is_active),int(body.is_demo),body.sort_order,product_id))
+        if body.min_quantity>body.max_quantity: raise HTTPException(422,"min_quantity не может быть больше max_quantity")
+        if body.fulfillment_mode=="auto" and (not body.provider or not body.provider_product_id): raise HTTPException(422,"Для AUTO укажите provider и provider_product_id")
+        if body.provider and not c.execute("SELECT 1 FROM fulfillment_providers WHERE code=?",(body.provider,)).fetchone(): raise HTTPException(422,"Неизвестный provider")
+        r=c.execute("""UPDATE products SET game_id=?,name=?,sku=?,amount=?,currency_label=?,provider_cost=?,is_active=?,is_demo=?,sort_order=?,fulfillment_mode=?,provider=?,provider_product_id=?,provider_price=?,fulfillment_enabled=?,min_quantity=?,max_quantity=? WHERE id=? AND archived_at IS NULL""",(body.game_id,body.name,body.sku,body.amount,body.currency_label,body.provider_cost,int(body.is_active),int(body.is_demo),body.sort_order,body.fulfillment_mode,body.provider,body.provider_product_id,body.provider_price,int(body.fulfillment_enabled),body.min_quantity,body.max_quantity,product_id))
         if not r.rowcount: raise HTTPException(404,"Товар не найден")
         audit(c,"product_updated","product",product_id,body.model_dump()); c.commit(); return {"ok":True}
 @app.post("/api/admin/products/{product_id}/archive",dependencies=[Depends(admin_session)])
 def admin_product_archive(product_id:int):
     with connect() as c: c.execute("UPDATE products SET is_active=0,archived_at=CURRENT_TIMESTAMP WHERE id=?",(product_id,)); audit(c,"product_updated","product",product_id,{"archived":True}); c.commit(); return {"ok":True}
+
+@app.patch("/api/admin/products/{product_id}/fulfillment-mode",dependencies=[Depends(admin_session)])
+def admin_product_fulfillment_mode(product_id:int,body:FulfillmentModeIn):
+    with connect() as c:
+        product=c.execute("SELECT provider,provider_product_id FROM products WHERE id=? AND archived_at IS NULL",(product_id,)).fetchone()
+        if not product: raise HTTPException(404,"Товар не найден")
+        if body.fulfillment_mode=="auto" and (not product["provider"] or not product["provider_product_id"]): raise HTTPException(422,"Сначала настройте provider mapping")
+        c.execute("UPDATE products SET fulfillment_mode=?,fulfillment_enabled=? WHERE id=?",(body.fulfillment_mode,int(body.fulfillment_mode=="auto"),product_id))
+        audit(c,"product_fulfillment_mode_changed","product",product_id,{"fulfillment_mode":body.fulfillment_mode}); c.commit()
+    return {"ok":True,"fulfillment_mode":body.fulfillment_mode}
+
+@app.get("/api/admin/fulfillment/providers",dependencies=[Depends(admin_session)])
+def admin_fulfillment_providers(): return list_providers()
+
+@app.patch("/api/admin/fulfillment/providers/{provider}",dependencies=[Depends(admin_session)])
+def admin_fulfillment_provider_save(provider:str,body:FulfillmentProviderIn):
+    with connect() as c:
+        row=c.execute("SELECT 1 FROM fulfillment_providers WHERE code=?",(provider,)).fetchone()
+        if not row: raise HTTPException(404,"Provider не найден")
+        c.execute("UPDATE fulfillment_providers SET name=?,enabled=?,updated_at=CURRENT_TIMESTAMP WHERE code=?",(body.name,int(body.enabled),provider))
+        audit(c,"fulfillment_provider_updated","provider",provider,{"name":body.name,"enabled":body.enabled}); c.commit()
+    return {"ok":True}
 
 @app.get("/api/admin/promos",dependencies=[Depends(admin_session)])
 def admin_promos():
@@ -314,7 +343,8 @@ def admin_confirm_demo(order_id:int):
     result,reward=confirm_demo_payment(order_id,REFERRAL_PERCENT)
     if result=="not_found": raise HTTPException(404,"Order not found")
     with connect() as c: audit(c,"demo_payment_confirmed","order",order_id,{"referral_result":result,"reward":reward}); c.commit()
-    return {"ok":True,"referral_result":result,"reward":reward}
+    fulfillment=process_paid_order(order_id)
+    return {"ok":True,"referral_result":result,"reward":reward,"fulfillment":fulfillment}
 @app.get("/api/admin/settings",dependencies=[Depends(admin_session)])
 def admin_settings(): return get_settings()
 @app.patch("/api/admin/settings",dependencies=[Depends(admin_session)])

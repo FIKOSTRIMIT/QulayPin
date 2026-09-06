@@ -45,7 +45,16 @@ def init_db():
         _add_column(conn,"products","provider_cost INTEGER")
         _add_column(conn,"products","is_demo INTEGER NOT NULL DEFAULT 0")
         _add_column(conn,"products","archived_at DATETIME")
+        _add_column(conn,"products","fulfillment_mode TEXT NOT NULL DEFAULT 'manual'")
+        _add_column(conn,"products","provider TEXT")
+        _add_column(conn,"products","provider_product_id TEXT")
+        _add_column(conn,"products","provider_price INTEGER")
+        _add_column(conn,"products","fulfillment_enabled INTEGER NOT NULL DEFAULT 0")
+        _add_column(conn,"products","min_quantity INTEGER NOT NULL DEFAULT 1")
+        _add_column(conn,"products","max_quantity INTEGER NOT NULL DEFAULT 1")
         _add_column(conn,"games","archived_at DATETIME")
+        _add_column(conn,"orders","provider_order_id TEXT")
+        _add_column(conn,"orders","fulfillment_error TEXT")
         conn.executescript("""
         CREATE UNIQUE INDEX IF NOT EXISTS idx_users_referral_code ON users(referral_code) WHERE referral_code IS NOT NULL;
         CREATE TABLE IF NOT EXISTS promo_codes(id INTEGER PRIMARY KEY AUTOINCREMENT,code TEXT NOT NULL UNIQUE COLLATE NOCASE,discount_type TEXT NOT NULL DEFAULT 'discount',discount_value INTEGER NOT NULL DEFAULT 0,is_active INTEGER NOT NULL DEFAULT 1,usage_limit INTEGER,used_count INTEGER NOT NULL DEFAULT 0,expires_at DATETIME);
@@ -60,6 +69,9 @@ def init_db():
         CREATE TABLE IF NOT EXISTS promo_usages(id INTEGER PRIMARY KEY AUTOINCREMENT,promo_id INTEGER NOT NULL REFERENCES promo_codes(id),user_id TEXT NOT NULL REFERENCES users(telegram_id),order_id INTEGER REFERENCES orders(id),value_applied INTEGER NOT NULL DEFAULT 0,created_at DATETIME DEFAULT CURRENT_TIMESTAMP);
         CREATE INDEX IF NOT EXISTS idx_promo_usages_user ON promo_usages(promo_id,user_id);
         CREATE TABLE IF NOT EXISTS referral_rewards(id INTEGER PRIMARY KEY AUTOINCREMENT,inviter_user_id TEXT NOT NULL REFERENCES users(telegram_id),referred_user_id TEXT NOT NULL REFERENCES users(telegram_id),order_id INTEGER NOT NULL UNIQUE REFERENCES orders(id),payment_id INTEGER UNIQUE REFERENCES payments(id),payment_amount INTEGER NOT NULL,percent INTEGER NOT NULL,reward_amount INTEGER NOT NULL,status TEXT NOT NULL DEFAULT 'credited',created_at DATETIME DEFAULT CURRENT_TIMESTAMP);
+        CREATE TABLE IF NOT EXISTS fulfillment_providers(code TEXT PRIMARY KEY,name TEXT NOT NULL,enabled INTEGER NOT NULL DEFAULT 0,updated_at DATETIME DEFAULT CURRENT_TIMESTAMP);
+        CREATE TABLE IF NOT EXISTS fulfillment_requests(id INTEGER PRIMARY KEY AUTOINCREMENT,order_id INTEGER NOT NULL UNIQUE REFERENCES orders(id),product_id INTEGER NOT NULL REFERENCES products(id),provider TEXT NOT NULL,provider_product_id TEXT NOT NULL,quantity INTEGER NOT NULL DEFAULT 1,provider_order_id TEXT,status TEXT NOT NULL DEFAULT 'created',error_message TEXT,request_payload TEXT NOT NULL DEFAULT '{}',response_payload TEXT NOT NULL DEFAULT '{}',created_at DATETIME DEFAULT CURRENT_TIMESTAMP,updated_at DATETIME DEFAULT CURRENT_TIMESTAMP);
+        CREATE INDEX IF NOT EXISTS idx_fulfillment_status ON fulfillment_requests(status,updated_at);
         """)
         _add_column(conn,"promo_codes","minimum_order INTEGER NOT NULL DEFAULT 0")
         _add_column(conn,"promo_codes","per_user_limit INTEGER NOT NULL DEFAULT 1")
@@ -68,6 +80,9 @@ def init_db():
         conn.execute("UPDATE promo_codes SET discount_type='balance' WHERE discount_type='bonus'")
         defaults={"store_name":"QulayPin","support_username":"","bot_username":"","maintenance_mode":"false","orders_enabled":"true","registration_enabled":"true","default_currency":"UZS","referral_reward":""}
         for key,value in defaults.items(): conn.execute("INSERT OR IGNORE INTO store_settings(key,value) VALUES(?,?)",(key,value))
+        conn.execute("INSERT OR IGNORE INTO fulfillment_providers(code,name,enabled) VALUES('roblox','Roblox',0)")
+        conn.execute("INSERT OR IGNORE INTO fulfillment_providers(code,name,enabled) VALUES('brawlstars','Brawl Stars',0)")
+        conn.execute("UPDATE products SET fulfillment_mode='manual' WHERE fulfillment_mode NOT IN ('manual','auto') OR fulfillment_mode IS NULL")
         conn.commit()
 
 def seed_catalog(games):
@@ -154,6 +169,8 @@ def confirm_demo_payment(order_id,percent):
         order=conn.execute("SELECT amount,status FROM orders WHERE id=?",(order_id,)).fetchone()
         if not order: return "not_found",0
         payment=conn.execute("SELECT id,status FROM payments WHERE order_id=? ORDER BY id DESC LIMIT 1",(order_id,)).fetchone()
+        if payment and payment["status"]=="paid" and order["status"] in {"paid","processing","completed","manual_review"}:
+            return "already_paid",0
         if not payment:
             cur=conn.execute("INSERT INTO payments(order_id,provider,amount,status) VALUES(?,'demo',?,'paid')",(order_id,order["amount"])); payment={"id":cur.lastrowid,"status":"paid"}
         else: conn.execute("UPDATE payments SET status='paid' WHERE id=?",(payment["id"],))

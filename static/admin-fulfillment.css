@@ -1,0 +1,19 @@
+.fulfillment-badge{border:0;letter-spacing:.05em}
+.fulfillment-badge.auto{background:#2388ff22;color:#62b0ff!important}
+.fulfillment-badge.manual{background:#ffffff0c;color:#9ba3b2!important}
+.auto-fields{display:grid;grid-template-columns:repeat(2,1fr);gap:0 12px;padding:12px;border:1px solid var(--line);border-radius:14px;background:#0c1018}
+.auto-fields.hidden{display:none}
+.provider-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.provider-card{margin:0}
+.provider-head{display:flex;align-items:flex-start;justify-content:space-between}
+.provider-head h2{margin:4px 0 12px}
+.api-ready{background:#65c99618;color:#78d5a7!important}
+.api-missing_credentials{background:#cf6d7b18;color:#df8b97!important}
+.mapping-list{display:flex;flex-direction:column;gap:7px;margin-top:16px;padding-top:13px;border-top:1px solid var(--line)}
+.mapping-list>span{display:flex;justify-content:space-between;gap:12px;color:var(--muted);font-size:10px}
+.mapping-list b{color:var(--text)}
+.security-note{color:var(--muted);font-size:11px}
+.row-error{display:block;margin-top:4px;color:var(--red);font-size:9px;font-style:normal;white-space:normal}
+@media(max-width:700px){.provider-grid{grid-template-columns:1fr}}
+@media(max-width:850px){.product-row .fulfillment-badge{display:inline-flex!important}}
+@media(max-width:420px){.auto-fields{grid-template-columns:1fr}}

@@ -116,16 +116,19 @@ Health check доступен по `GET /health`. В production `MINI_APP_URL` �
 
 ---
 
-## Куда подключать настоящую оплату
+## AUTO fulfillment
 
-В `app.py` сейчас заказ просто создаётся со статусом `pending`.
+Пакеты поддерживают режимы `manual` и `auto`. AUTO запускается только backend-функцией `process_paid_order()` после подтверждённого платежа. Создание заказа во frontend никогда не устанавливает `completed`.
 
-Следующий этап:
+Для Roblox и Brawl Stars задайте URL официального/разрешённого provider endpoint и API key только в серверном `.env`:
 
-1. создать invoice/платёж через официальный API провайдера;
-2. принять callback/webhook;
-3. после успешной оплаты отправить заказ в API поставщика;
-4. обновить статус заказа;
-5. отправить уведомление пользователю.
+```env
+QULAYPIN_PROVIDER_ROBLOX_URL=https://provider.example/orders
+QULAYPIN_PROVIDER_ROBLOX_API_KEY=server-secret
+QULAYPIN_PROVIDER_BRAWLSTARS_URL=https://provider.example/orders
+QULAYPIN_PROVIDER_BRAWLSTARS_API_KEY=server-secret
+```
 
-Не храните секретные API-ключи в `static/app.js` — только в `.env` на сервере.
+Админ-панель управляет включением провайдера и mapping продуктов, но никогда не получает API key. При ошибке provider заказ переводится в `manual_review`, а сообщение сохраняется в fulfillment-записи и admin audit log.
+
+Backend отправляет `POST` с `merchant_order_id`, `product_id`, `quantity`, `expected_price` и разрешённым идентификатором аккаунта. Адаптер ожидает JSON с `provider_order_id` (также принимаются `order_id` или `id`) и `status`. Значение `completed` принимается только из подтверждённого ответа provider; `failed`, `error`, `rejected` и `cancelled` переводят заказ в `manual_review`. Для конкретного официального provider при необходимости адаптируйте только `_send_provider_request()` в `fulfillment.py` под его документированный контракт.

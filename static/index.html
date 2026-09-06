@@ -3,32 +3,31 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-  <meta name="theme-color" content="#07080d">
-  <title>QulayPin — игровые пополнения</title>
+  <meta name="theme-color" content="#0D1628">
+  <title>QulayPin</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="/static/preferences.js"></script>
   <link rel="stylesheet" href="/static/styles.css">
   <link rel="stylesheet" href="/static/navigation.css">
-  <link rel="stylesheet" href="/static/animations.css">
-  <link rel="stylesheet" href="/static/game-detail.css">
-  <link rel="stylesheet" href="/static/checkout.css">
-  <link rel="stylesheet" href="/static/profile.css">
-  <link rel="stylesheet" href="/static/profile-motion.css">
-  <link rel="stylesheet" href="/static/promo-referral.css">
-  <link rel="stylesheet" href="/static/mobile-store.css">
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="stylesheet" href="/static/premium-mobile.css">
 </head>
 <body>
+  <div class="ambient" aria-hidden="true"><i></i><i></i><i></i></div>
   <div class="app-shell">
     <header class="topbar" id="topbar">
-      <button class="brand" data-route="home" aria-label="QulayPin, на главную"><span class="brand-mark">Q</span><span>Qulay<span>Pin</span></span></button>
-      <div class="balance-mini"><div><small>Баланс</small><strong id="headerBalance">0 сум</strong></div><button class="add-balance" data-route="topup" aria-label="Пополнить баланс">+</button></div>
+      <button class="header-user" data-route="profile" aria-label="QulayPin">
+        <span class="header-avatar" id="headerAvatar">Q</span>
+        <span class="header-user-copy"><strong id="headerName">QulayPin</strong><small id="headerSecondary">Telegram</small></span>
+      </button>
+      <button class="header-balance" data-route="topup" aria-label="QulayPin"><span aria-hidden="true">●</span><strong id="headerBalance">0</strong></button>
     </header>
     <main id="app" aria-live="polite"></main>
-    <nav class="bottom-nav" id="bottomNav" aria-label="Основная навигация">
-      <span class="nav-bubble" aria-hidden="true"></span>
-      <button class="nav-btn active" data-route="home"><span class="nav-icon">⌂</span><small>Главная</small></button>
-      <button class="nav-btn" data-route="catalog"><span class="nav-icon">▦</span><small>Каталог</small></button>
-      <button class="nav-btn" data-route="orders"><span class="nav-icon">◷</span><small>Заказы</small></button>
-      <button class="nav-btn" data-route="profile"><span class="nav-icon">○</span><small>Профиль</small></button>
+    <nav class="bottom-nav" id="bottomNav" aria-label="QulayPin">
+      <span class="nav-bubble" aria-hidden="true"><span class="nav-bubble-icon"></span></span>
+      <button class="nav-btn active" data-route="home"><span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M3.5 10.5 12 3l8.5 7.5v9a1.5 1.5 0 0 1-1.5 1.5h-4.5v-6h-5v6H5a1.5 1.5 0 0 1-1.5-1.5z"/></svg></span><small data-nav-label="home"></small></button>
+      <button class="nav-btn" data-route="catalog"><span class="nav-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg></span><small data-nav-label="catalog"></small></button>
+      <button class="nav-btn" data-route="orders"><span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M7 3.5h10a2 2 0 0 1 2 2v15l-3-2-4 2-4-2-3 2v-15a2 2 0 0 1 2-2Z"/><path d="M8.5 8h7M8.5 12h5"/></svg></span><small data-nav-label="orders"></small></button>
+      <button class="nav-btn" data-route="profile"><span class="nav-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4.5 21a7.5 7.5 0 0 1 15 0"/></svg></span><small data-nav-label="profile"></small></button>
     </nav>
   </div>
   <div id="toast" class="toast" role="status"></div>
