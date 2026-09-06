@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from urllib.parse import parse_qsl
 from fastapi import Cookie,Depends,FastAPI,Header,HTTPException,Request,Response
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel,Field
@@ -66,6 +67,13 @@ async def lifespan(_app):
     init_db(); seed_catalog(SEED_CATALOG); yield
 
 app=FastAPI(title="QulayPin Mini App",lifespan=lifespan)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["https://fikostrimit.github.io"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 app.mount("/static",StaticFiles(directory=BASE_DIR/"static"),name="static")
 
 class OrderIn(BaseModel):
